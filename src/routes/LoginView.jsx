@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {auth, userExists} from "../firebase/firebase";
 
 import { useNavigate } from "react-router-dom";
+import AuthProvider from "../components/authProvider";
 
 export default function LoginView(){
 
@@ -18,28 +19,6 @@ export default function LoginView(){
   */
   const [state, setState] = useState(0);
 
-  useEffect(() => {
-    setState(1);
-    onAuthStateChanged(auth, handleUserStateChanged);
-  },[])
-
-  async function handleUserStateChanged(user){
-    if(user){
-      const isRegistered = await userExists(user.uid);
-      if(isRegistered){
-        navigate("/dashboard");
-        setState(2);
-      } else {
-        navigate("/choose-username")
-        setState(3);
-      }
-      console.log(user.displayName);
-    } else {
-      setState(4);
-      console.log("no hay nadie autenticado")
-    }
-  }
-
   async function handleOnClick(){
     const googleProvider = new GoogleAuthProvider();
     await signInWithGoogle(googleProvider);
@@ -54,12 +33,17 @@ export default function LoginView(){
     }
   }
 
-  if (state === 2){
-    return <div>autenticado y resgistrado</div>
-  }
-  if (state === 3){
-    return <div>Autenticado sin registro</div>
-  }
+  function handleUserLoggedIn(user){
+    navigate("/dashboard");
+  };
+    
+  function handleUserNotRegistered(user){
+    navigate("/choose-username")
+  };
+  function handleUserNotLoggedIn(){
+    setState(4);
+  };
+
   if (state === 4){
     return( 
       <div>
@@ -68,5 +52,14 @@ export default function LoginView(){
     )
   }
 
-  return <div>loading</div>
+  return (
+    <AuthProvider 
+      onUserLoggedIn={handleUserLoggedIn}
+      onUserNotRegistered={handleUserNotRegistered}
+      onUserNotLoggedIn={handleUserNotLoggedIn}
+    >
+      <div>loading</div>
+
+    </AuthProvider>
+  )
 }
